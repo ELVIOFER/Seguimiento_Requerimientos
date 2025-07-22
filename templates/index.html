@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Control de Requerimientos</title>
+    <!-- Hoja de estilos de Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Iconos de Bootstrap -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="container mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h1>Dashboard de Requerimientos</h1>
+            <a href="{{ url_for('nuevo_requerimiento') }}" class="btn btn-primary">Nuevo Requerimiento</a>
+        </div>
+
+        <form method="GET" action="{{ url_for('index') }}" class="mb-4">
+            <div class="input-group">
+                <input type="text" class="form-control" name="q" placeholder="Buscar por N° de Requerimiento o descripción..." value="{{ request.args.get('q', '') }}">
+                <button class="btn btn-outline-secondary" type="submit">Buscar</button>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-danger" title="Limpiar búsqueda">X</a>
+            </div>
+        </form>
+
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+            <tr>
+                <th>Acciones</th>
+                <th>
+                    <a href="{{ url_for('index', sort_by='numero_requerimiento', order='asc' if sort_by == 'numero_requerimiento' and order == 'desc' else 'desc', q=query_search or '') }}" class="text-white text-decoration-none">
+                        N° Requerimiento
+                        {% if sort_by == 'numero_requerimiento' %}
+                            <i class="bi bi-arrow-{{ 'down' if order == 'desc' else 'up' }}"></i>
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('index', sort_by='fecha_presentacion', order='asc' if sort_by == 'fecha_presentacion' and order == 'desc' else 'desc', q=query_search or '') }}" class="text-white text-decoration-none">
+                        Fecha Presentación
+                        {% if sort_by == 'fecha_presentacion' %}
+                            <i class="bi bi-arrow-{{ 'down' if order == 'desc' else 'up' }}"></i>
+                        {% endif %}
+                    </a>
+                </th>
+                <th>
+                    <a href="{{ url_for('index', sort_by='estado', order='asc' if sort_by == 'estado' and order == 'desc' else 'desc', q=query_search or '') }}" class="text-white text-decoration-none">
+                        Estado
+                        {% if sort_by == 'estado' %}
+                            <i class="bi bi-arrow-{{ 'down' if order == 'desc' else 'up' }}"></i>
+                        {% endif %}
+                    </a>
+                </th>
+                <th>Fecha Emisión Orden</th>
+                <th>Fecha Notificación</th>
+                <th>Días hasta Emisión</th>
+                <th>Plazo de Entrega (días)</th>
+                <th>Fecha Culminación</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for item in resultados %}
+                <tr>
+                    <td>
+                        <div class="btn-group-vertical btn-group-sm" role="group">
+                            <a href="{{ url_for('editar_requerimiento', req_id=item.id) }}" class="btn btn-info" title="Editar"><i class="bi bi-pencil-square"></i></a>
+                            {% if not item.orden_id %}
+                                <a href="{{ url_for('crear_orden', req_id=item.id) }}" class="btn btn-warning" title="Crear Orden"><i class="bi bi-plus-circle"></i></a>
+                            {% else %}
+                                <!-- ====================================================================================== -->
+                                <!-- <<< --- ESTA ES LA LÍNEA CORREGIDA: 'ver_orden' ha sido cambiado a 'orden_detalle' --- >>> -->
+                                <a href="{{ url_for('orden_detalle', orden_id=item.orden_id) }}" class="btn btn-success" title="Ver Detalles de Orden"><i class="bi bi-eye"></i></a>
+                                <!-- ====================================================================================== -->
+                            {% endif %}
+                            <form action="{{ url_for('eliminar_requerimiento', req_id=item.id) }}" method="post" onsubmit="return confirm('¿Estás seguro?');" style="display: inline;">
+                                <button type="submit" class="btn btn-danger w-100" title="Eliminar"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </div>
+                    </td>
+                    <td>
+                        {{ item.numero_requerimiento }}
+                        {% if item.archivo_path %}
+                            <a href="{{ url_for('download_file', filename=item.archivo_path) }}" target="_blank" title="Ver adjunto"><i class="bi bi-paperclip"></i></a>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.fecha_presentacion }}</td>
+                    <td><span class="badge bg-secondary">{{ item.estado }}</span></td>
+                    <td>{{ item.fecha_emision or 'Pendiente' }}</td>
+                    <td>{{ item.fecha_notificacion or 'Pendiente' }}</td>
+                    <td>
+                        {% if item.dias_hasta_emision is not none %}
+                            <span class="badge bg-info text-dark">{{ item.dias_hasta_emision }} días</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.plazo_ejecucion_dias is not none %}
+                            <span class="badge bg-primary">{{ item.plazo_ejecucion_dias }} días</span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {{ item.fecha_culminacion or '-' }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    {% if request.args.get('q') %}
+                        <td colspan="9" class="text-center">No se encontraron resultados para "<strong>{{ request.args.get('q') }}</strong>".</td>
+                    {% else %}
+                        <td colspan="9" class="text-center">No hay requerimientos registrados todavía.</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- ... (El resto del archivo, incluyendo la paginación, ya era correcto y no necesita cambios) ... -->
+        {% if total_items > 0 %}
+            {% set total_pages = (total_items / per_page) | round(0, 'ceil') | int %}
+            {% if total_pages > 1 %}
+            <nav aria-label="Navegación de páginas">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=page-1, q=query_search or '', sort_by=sort_by, order=order) }}">Anterior</a>
+                    </li>
+                    {% set page_range = 5 %}
+                    {% for i in range(1, total_pages + 1) %}
+                        {% if i == 1 or i == total_pages or (i >= page - page_range//2 and i <= page + page_range//2) %}
+                            {% if loop.previtem is defined and i != loop.previtem + 1 %}
+                                <li class="page-item disabled"><span class="page-link">...</span></li>
+                            {% endif %}
+                            <li class="page-item {% if i == page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('index', page=i, q=query_search or '', sort_by=sort_by, order=order) }}">{{ i }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    <li class="page-item {% if page >= total_pages %}disabled{% endif %}">
+                        <a class="page-link" href="{{ url_for('index', page=page+1, q=query_search or '', sort_by=sort_by, order=order) }}">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+        {% endif %}
+
+    </div>
+
+</body>
+</html>

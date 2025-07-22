@@ -1,0 +1,46 @@
+<!-- templates/crear_requerimiento.html -->
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Nuevo Requerimiento</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h2>Registrar Nuevo Requerimiento</h2>
+        <hr>
+
+        <!-- Si hay un mensaje de error, lo mostramos aquí -->
+        {% if error %}
+            <div class="alert alert-danger">{{ error }}</div>
+        {% endif %}
+
+        <!-- El formulario envía los datos a la misma URL (/requerimiento/nuevo) usando el método POST -->
+        <form method="post" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="numero_requerimiento" class="form-label">Número de Requerimiento</label>
+                <input type="text" class="form-control" id="numero_requerimiento" name="numero_requerimiento" required>
+                <div class="form-text">Ej: REQ-GPP-2023-0123</div>
+            </div>
+            <div class="mb-3">
+                <label for="descripcion" class="form-label">Descripción o Asunto</label>
+                <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="fecha_presentacion" class="form-label">Fecha de Presentación en Mesa de Partes</label>
+                <input type="date" class="form-control" id="fecha_presentacion" name="fecha_presentacion" required>
+            </div>
+            <!-- Nuevo campo para el archivo -->
+<div class="mb-3">
+    <label for="archivo" class="form-label">Adjuntar Documento (PDF, Opcional)</label>
+    <input class="form-control" type="file" id="archivo" name="archivo" accept=".pdf,.doc,.docx,.xls,.xlsx">
+</div>           
+
+            <button type="submit" class="btn btn-primary">Guardar Requerimiento</button>
+            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</body>
+</html>
