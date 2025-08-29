@@ -20,7 +20,53 @@ app.config['POSTS_PER_PAGE'] = 10
 # --- Inicialización (sin cambios) ---
 init_app(app)
 
-# --- Funciones de Ayuda (sin cambios) ---
+# --- Funciones de Ayuda ---
+
+def parsear_fecha(fecha_str):
+    """
+    Convierte una cadena de texto en formato 'YYYY-MM-DD' a un objeto datetime.
+    Retorna None si la cadena es nula, está vacía o tiene un formato incorrecto.
+    """
+    if not fecha_str:
+        return None
+    try:
+        # Intenta convertir la cadena a un objeto de fecha
+        return datetime.strptime(fecha_str, '%Y-%m-%d')
+    except (ValueError, TypeError):
+        # Si el formato es incorrecto o no es una cadena, devuelve None
+        print(f"Advertencia: Formato de fecha inválido encontrado: '{fecha_str}'")
+        return None
+def procesar_item_requerimiento(item):
+    item_procesado = dict(item)
+    item_procesado['dias_hasta_emision'] = None
+    item_procesado['dias_hasta_notificacion'] = None
+    item_procesado['fecha_culminacion'] = None
+
+    # Usamos nuestra nueva función para convertir fechas de forma segura
+    fecha_presentacion = parsear_fecha(item_procesado.get('fecha_presentacion'))
+    fecha_emision = parsear_fecha(item_procesado.get('fecha_emision'))
+    fecha_notificacion = parsear_fecha(item_procesado.get('fecha_notificacion'))
+
+    # Ahora la lógica de cálculo es más clara y segura
+    if fecha_presentacion and fecha_emision:
+        item_procesado['dias_hasta_emision'] = (fecha_emision - fecha_presentacion).days
+
+    if fecha_presentacion and fecha_notificacion:
+        item_procesado['dias_hasta_notificacion'] = (fecha_notificacion - fecha_presentacion).days
+
+        plazo_dias = item_procesado.get('plazo_ejecucion_dias')
+        # Nos aseguramos de que plazo_dias sea un número antes de usarlo
+        if isinstance(plazo_dias, int):
+            plazo = timedelta(days=plazo_dias)
+            fecha_culminacion_obj = fecha_notificacion + plazo
+            item_procesado['fecha_culminacion'] = fecha_culminacion_obj.strftime('%Y-%m-%d')
+            
+    # El bloque try/except ya no es necesario aquí para las fechas,
+    # porque `parsear_fecha` ya maneja los errores de formato.
+    # Esto simplifica enormemente la función.
+
+    return item_procesado
+
 def procesar_item_requerimiento(item):
     # ... (código sin cambios)
     item_procesado = dict(item)
