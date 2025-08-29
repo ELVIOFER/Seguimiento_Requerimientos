@@ -47,24 +47,17 @@ def procesar_item_requerimiento(item):
     fecha_emision = parsear_fecha(item_procesado.get('fecha_emision'))
     fecha_notificacion = parsear_fecha(item_procesado.get('fecha_notificacion'))
 
-    # Ahora la lógica de cálculo es más clara y segura
-    if fecha_presentacion and fecha_emision:
-        item_procesado['dias_hasta_emision'] = (fecha_emision - fecha_presentacion).days
-
+    # Lógica para 'dias_hasta_notificacion'
     if fecha_presentacion and fecha_notificacion:
         item_procesado['dias_hasta_notificacion'] = (fecha_notificacion - fecha_presentacion).days
 
-        plazo_dias = item_procesado.get('plazo_ejecucion_dias')
-        # Nos aseguramos de que plazo_dias sea un número antes de usarlo
-        if isinstance(plazo_dias, int):
-            plazo = timedelta(days=plazo_dias)
-            fecha_culminacion_obj = fecha_notificacion + plazo
-            item_procesado['fecha_culminacion'] = fecha_culminacion_obj.strftime('%Y-%m-%d')
-            
-    # El bloque try/except ya no es necesario aquí para las fechas,
-    # porque `parsear_fecha` ya maneja los errores de formato.
-    # Esto simplifica enormemente la función.
-
+    # Lógica para 'fecha_culminacion' - AHORA ES INDEPENDIENTE Y MÁS CLARA
+    plazo_dias = item_procesado.get('plazo_ejecucion_dias')
+    if fecha_notificacion and isinstance(plazo_dias, int):
+        plazo = timedelta(days=plazo_dias)
+        fecha_culminacion_obj = fecha_notificacion + plazo
+        item_procesado['fecha_culminacion'] = fecha_culminacion_obj.strftime('%Y-%m-%d')
+        
     return item_procesado
 
 def procesar_item_requerimiento(item):
