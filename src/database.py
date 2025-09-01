@@ -1,52 +1,32 @@
-import sqlite3
-import click
-from flask import current_app, g
-from flask.cli import with_appcontext
+# --- src/database.py (Versión Final y Limpia con SQLAlchemy) ---
 
-def get_db():
-    if "db" not in g:
-        g.db = sqlite3.connect(
-            current_app.config["DATABASE"], detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
-    return g.db
-
-# <<<--- AQUÍ ES DONDE PEGAMOS LA FUNCIÓN --- >>>
-def get_or_create_provider(db, provider_name):
+def get_or_create_provider(db_session, provider_model, provider_name):
     """
-    Busca un proveedor por nombre. Si no existe, lo crea.
-    Retorna el ID del proveedor.
+    Busca un proveedor por nombre usando SQLAlchemy. Si no existe, lo crea.
+    Retorna la instancia del objeto Proveedor.
+    
+    Args:
+        db_session: La sesión de SQLAlchemy (generalmente db.session).
+        provider_model: La clase del modelo que se va a usar (la clase Proveedor).
+        provider_name: El nombre del proveedor a buscar o crear.
     """
     provider_name = provider_name.strip()
-    proveedor = db.execute(
-        "SELECT id FROM proveedor WHERE LOWER(nombre) = LOWER(?)", (provider_name,)
-    ).fetchone()
+    
+    # 1. Hacemos la consulta usando el ORM de SQLAlchemy.
+    #    .ilike() es para una búsqueda case-insensitive (ignora mayúsculas/minúsculas).
+    proveedor = db_session.query(provider_model).filter(
+        provider_model.nombre.ilike(provider_name)
+    ).first()
+
+    # 2. Si el proveedor existe, lo devolvemos.
     if proveedor:
-        return proveedor["id"]
+        return proveedor
     else:
-        cursor = db.execute(
-            "INSERT INTO proveedor (nombre) VALUES (?)", (provider_name,)
-        )
-        return cursor.lastrowid
-
-def close_db(e=None):
-    db = g.pop("db", None)
-    if db is not None:
-        db.close()
-
-def init_db():
-    db = get_db()
-    with current_app.open_resource("schema.sql") as f:
-        db.executescript(f.read().decode("utf8"))
-
-@click.command("init-db")
-@with_appcontext  # <- Tu decorador está correctamente aquí
-def init_db_command():
-    """Limpia los datos existentes y crea las tablas nuevas."""
-    init_db()
-    click.echo("Base de datos inicializada.")
-
-def init_app(app):
-    """Registra funciones de base de datos con la aplicación Flask."""
-    app.teardown_appcontext(close_db)
-    app.cli.add_command(init_db_command)
+        # 3. Si no existe, creamos un nuevo objeto Proveedor.
+        nuevo_proveedor = provider_model(nombre=provider_name)
+        
+        # 4. Lo añadimos a la "sesión" (como un área de preparación de cambios).
+        db_session.add(nuevo_proveedor)
+        
+        # 5. Devolvemos el nuevo objeto. El 'commit' se hará en la ruta.
+        return nuevo_proveedor

@@ -1,71 +1,62 @@
-<!-- templates/crear_orden.html -->
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crear Orden</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-4">
-        <!-- Mostramos el número del requerimiento para dar contexto -->
-        <h2>Crear Orden para Requerimiento: <span class="text-primary">{{ requerimiento.numero_requerimiento }}</span></h2>
-        <p class="text-muted">{{ requerimiento.descripcion }}</p>
-        <hr>
+{% extends "base.html" %}
 
-        <form method="post">
-            <div class="row">
-    <!-- Nuevo Select para Proveedor -->
-    <!-- Nuevo Campo de Texto para Proveedor -->
-<div class="col-md-6 mb-3">
-    <label for="proveedor_nombre" class="form-label">Nombre del Proveedor</label>
-    <!-- 1. Añadimos el atributo 'list' que apunta al id de nuestro datalist -->
-    <input type="text" class="form-control" id="proveedor_nombre" name="proveedor_nombre" 
-           placeholder="Escriba o seleccione un proveedor" required list="proveedores-list">
-    
-    <!-- 2. Creamos el datalist con las opciones -->
-    <datalist id="proveedores-list">
-        {% for proveedor in proveedores %}
-            <option value="{{ proveedor }}">
-        {% endfor %}
-    </datalist>
-</div>
-    <!-- Nuevo Campo para Monto -->
-    <div class="col-md-6 mb-3">
-        <label for="monto" class="form-label">Monto (S/.)</label>
-        <input type="number" step="0.01" class="form-control" id="monto" name="monto" placeholder="Ej: 1500.50" required>
-    </div>
-</div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="tipo_orden" class="form-label">Tipo de Orden</label>
-                    <select class="form-select" id="tipo_orden" name="tipo_orden" required>
-                        <option value="" selected disabled>-- Seleccione un tipo --</option>
-                        <option value="Servicio">Servicio</option>
-                        <option value="Bienes">Bienes</option>
-                        <option value="Formato">Formato</option>
-                    </select>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="plazo_ejecucion_dias" class="form-label">Plazo de Ejecución (días)</label>
-                    <input type="number" class="form-control" id="plazo_ejecucion_dias" name="plazo_ejecucion_dias" required min="1">
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-md-6 mb-3">
-                    <label for="fecha_emision" class="form-label">Fecha de Emisión de la Orden</label>
-                    <input type="date" class="form-control" id="fecha_emision" name="fecha_emision" required>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <label for="fecha_notificacion" class="form-label">Fecha de Notificación</label>
-                    <input type="date" class="form-control" id="fecha_notificacion" name="fecha_notificacion" required>
-                </div>
-            </div>
+{% block title %}Crear Orden para Req. {{ requerimiento.numero_requerimiento }}{% endblock %}
 
-            <button type="submit" class="btn btn-primary">Guardar Orden</button>
-            <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
-        </form>
-    </div>
-</body>
-</html>
+{% block content %}
+    <!-- Mostramos el número del requerimiento para dar contexto -->
+    <h2>Crear Orden para Requerimiento: <span class="text-primary">{{ requerimiento.numero_requerimiento }}</span></h2>
+    <p class="text-muted">{{ requerimiento.descripcion }}</p>
+    <hr>
+
+    <form method="post">
+        <div class="row">
+            <!-- Nuevo Campo de Texto para Proveedor -->
+            <div class="col-md-6 mb-3">
+                <label for="proveedor_nombre" class="form-label">Nombre del Proveedor</label>
+                <!-- 1. Añadimos el atributo 'list' que apunta al id de nuestro datalist -->
+                <input type="text" class="form-control" id="proveedor_nombre" name="proveedor_nombre" 
+                       placeholder="Escriba o seleccione un proveedor" required list="proveedores-list">
+                
+                <!-- 2. Creamos el datalist con las opciones -->
+                <datalist id="proveedores-list">
+                    {% for proveedor in proveedores %}
+                        <option value="{{ proveedor }}">
+                    {% endfor %}
+                </datalist>
+            </div>
+            <!-- Nuevo Campo para Monto -->
+            <div class="col-md-6 mb-3">
+                <label for="monto" class="form-label">Monto (S/.)</label>
+                <input type="number" step="0.01" class="form-control" id="monto" name="monto" placeholder="Ej: 1500.50" required>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="tipo_orden" class="form-label">Tipo de Orden</label>
+                <select class="form-select" id="tipo_orden" name="tipo_orden" required>
+                    <option value="" selected disabled>-- Seleccione un tipo --</option>
+                    <option value="Servicio">Servicio</option>
+                    <option value="Bienes">Bienes</option>
+                    <option value="Formato">Formato</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="plazo_ejecucion_dias" class="form-label">Plazo de Ejecución (días)</label>
+                <input type="number" class="form-control" id="plazo_ejecucion_dias" name="plazo_ejecucion_dias" required min="1">
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="fecha_emision" class="form-label">Fecha de Emisión de la Orden</label>
+                <input type="date" class="form-control" id="fecha_emision" name="fecha_emision" required>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="fecha_notificacion" class="form-label">Fecha de Notificación</label>
+                <input type="date" class="form-control" id="fecha_notificacion" name="fecha_notificacion" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Guardar Orden</button>
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+{% endblock %}

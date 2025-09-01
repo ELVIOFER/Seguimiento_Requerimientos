@@ -1,127 +1,116 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Detalles de Orden</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
-    <div class="container mt-5">
-        <div class="card">
-            <div class="card-header">
-                <h3>Detalles de Orden para Requerimiento: {{ orden.numero_requerimiento }}</h3>
-            </div>
-            
-            <!-- INICIO DEL FORMULARIO -->
-            
-            <!-- ========================================================================= -->
-            <!-- <<< --- ESTA ES LA LÍNEA CRUCIAL QUE FALTABA Y QUE HA SIDO AÑADIDA --- >>> -->
-            <!-- Le decimos al formulario que envíe los datos a la ruta 'editar_orden' -->
-            <form method="post" enctype="multipart/form-data" action="{{ url_for('ornde.editar_orden', orden_id=orden.id) }}">
-            <!-- ========================================================================= -->
+{% extends "base.html" %}
 
-                <div class="card-body">
-                    <table class="table table-bordered">
-                        <tbody>
-                            <!-- ... (el resto de la tabla es correcto, lo dejo igual) ... -->
-                            <tr>
-                                <th style="width: 30%;">Asunto del Requerimiento</th>
-                                <td><textarea class="form-control" readonly>{{ orden.requerimiento_descripcion }}</textarea></td>
-                            </tr>
-                            {% if orden.requerimiento_archivo_path %}
-                            <tr>
-                                <th>Documento del Requerimiento</th>
-                                <td>
-                                    <a href="{{ url_for('download_file', filename=orden.requerimiento_archivo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
-                                        Ver Documento ({{ orden.requerimiento_archivo_path }})
-                                    </a>
-                                </td>
-                            </tr>
-                            {% endif %}
-                            <tr>
-                                <th>Proveedor</th>
-                                <td>
-                                    <span id="proveedor_nombre_view">{{ orden.proveedor_nombre }}</span>
-                                    <input type="text" class="form-control d-none" name="proveedor_nombre" value="{{ orden.proveedor_nombre }}" id="proveedor_nombre_edit">
-                                </td>
-                            </tr>
-                            <!-- ... y así sucesivamente con el resto de los campos ... -->
-                            <tr>
-                                <th>Monto</th>
-                                <td>
-                                    <span id="monto_view">S/ {{ "%.2f"|format(orden.monto or 0) }}</span>
-                                    <input type="number" step="0.01" class="form-control d-none" name="monto" value="{{ orden.monto }}" id="monto_edit">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Tipo de Orden</th>
-                                <td>
-                                    <span id="tipo_orden_view">{{ orden.tipo_orden }}</span>
-                                    <select class="form-select d-none" name="tipo_orden" id="tipo_orden_edit">
-                                        <option value="Servicio" {% if orden.tipo_orden == 'Servicio' %}selected{% endif %}>Servicio</option>
-                                        <option value="Bienes" {% if orden.tipo_orden == 'Bienes' %}selected{% endif %}>Bienes</option>
-                                        <option value="Formato" {% if orden.tipo_orden == 'Formato' %}selected{% endif %}>Formato</option>
-                                    </select>
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Plazo de Ejecución</th>
-                                <td>
-                                    <span id="plazo_view">{{ orden.plazo_ejecucion_dias }} días</span>
-                                    <input type="number" class="form-control d-none" name="plazo_ejecucion_dias" value="{{ orden.plazo_ejecucion_dias }}" id="plazo_edit">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Fecha de Emisión</th>
-                                <td>
-                                    <span id="fecha_emision_view">{{ orden.fecha_emision }}</span>
-                                    <input type="date" class="form-control d-none" name="fecha_emision" value="{{ orden.fecha_emision }}" id="fecha_emision_edit">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Fecha de Notificación</th>
-                                <td>
-                                    <span id="fecha_notificacion_view">{{ orden.fecha_notificacion }}</span>
-                                    <input type="date" class="form-control d-none" name="fecha_notificacion" value="{{ orden.fecha_notificacion }}" id="fecha_notificacion_edit">
-                                </td>
-                            </tr>
-                            <tr>
-                                <th>Documento de Orden</th>
-                                <td>
-                                    <div id="archivo_orden_view">
-                                        {% if orden.archivo_orden_path %}
-                                            <a href="{{ url_for('download_file', filename=orden.archivo_orden_path) }}" target="_blank">
-                                                {{ orden.archivo_orden_path }}
-                                            </a>
-                                        {% else %}
-                                            <span class="text-muted">No hay documento adjunto.</span>
-                                        {% endif %}
-                                    </div>
-                                    <div id="archivo_orden_edit" class="d-none">
-                                        <input class="form-control" type="file" name="archivo_orden">
-                                        {% if orden.archivo_orden_path %}
-                                            <small class="form-text text-muted">Dejar en blanco para conservar el archivo actual: {{ orden.archivo_orden_path }}</small>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+{% block title %}Detalles de Orden para Req. {{ orden.requerimiento.numero_requerimiento }}{% endblock %}
 
-                <div class="card-footer text-end">
-                    <div id="view_buttons">
-                        <button type="button" class="btn btn-primary" onclick="toggleEdit(true)">Editar Orden</button>
-                        <a href="{{ url_for('index') }}" class="btn btn-secondary">Volver al Dashboard</a>
-                    </div>
-                    <div id="edit_buttons" class="d-none">
-                        <button type="submit" class="btn btn-success">Guardar Cambios</button>
-                        <button type="button" class="btn btn-secondary" onclick="toggleEdit(false)">Cancelar</button>
-                    </div>
-                </div>
-            </form> <!-- FIN DEL FORMULARIO -->
+{% block content %}
+    <div class="card">
+        <div class="card-header">
+            <h3>Detalles de Orden para Requerimiento: {{ orden.requerimiento.numero_requerimiento }}</h3>
         </div>
+        
+        <!-- INICIO DEL FORMULARIO -->
+        <form method="post" enctype="multipart/form-data" action="{{ url_for('orden.editar_orden', orden_id=orden.id) }}">
+            <div class="card-body">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th style="width: 30%;">Asunto del Requerimiento</th>
+                            <td><textarea class="form-control" readonly>{{ orden.requerimiento.descripcion }}</textarea></td>
+                        </tr>
+                        {% if orden.requerimiento.archivo_path %}
+                        <tr>
+                            <th>Documento del Requerimiento</th>
+                            <td>
+                                <a href="{{ url_for('download_file', filename=orden.requerimiento.archivo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
+                                    Ver Documento ({{ orden.requerimiento.archivo_path }})
+                                </a>
+                            </td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <th>Proveedor</th>
+                            <td>
+                                <!-- ====================================================================== -->
+                                <!-- <<< --- ESTA ES LA LÍNEA CORREGIDA --- >>> -->
+                                <span id="proveedor_nombre_view">{{ orden.proveedor.nombre }}</span>
+                                <input type="text" class="form-control d-none" name="proveedor_nombre" value="{{ orden.proveedor.nombre }}" id="proveedor_nombre_edit">
+                                <!-- ====================================================================== -->
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Monto</th>
+                            <td>
+                                <span id="monto_view">S/ {{ "%.2f"|format(orden.monto or 0) }}</span>
+                                <input type="number" step="0.01" class="form-control d-none" name="monto" value="{{ orden.monto }}" id="monto_edit">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Tipo de Orden</th>
+                            <td>
+                                <span id="tipo_orden_view">{{ orden.tipo_orden }}</span>
+                                <select class="form-select d-none" name="tipo_orden" id="tipo_orden_edit">
+                                    <option value="Servicio" {% if orden.tipo_orden == 'Servicio' %}selected{% endif %}>Servicio</option>
+                                    <option value="Bienes" {% if orden.tipo_orden == 'Bienes' %}selected{% endif %}>Bienes</option>
+                                    <option value="Formato" {% if orden.tipo_orden == 'Formato' %}selected{% endif %}>Formato</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Plazo de Ejecución</th>
+                            <td>
+                                <span id="plazo_view">{{ orden.plazo_ejecucion_dias }} días</span>
+                                <input type="number" class="form-control d-none" name="plazo_ejecucion_dias" value="{{ orden.plazo_ejecucion_dias }}" id="plazo_edit">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de Emisión</th>
+                            <td>
+                                <span id="fecha_emision_view">{{ orden.fecha_emision }}</span>
+                                <input type="date" class="form-control d-none" name="fecha_emision" value="{{ orden.fecha_emision }}" id="fecha_emision_edit">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Fecha de Notificación</th>
+                            <td>
+                                <span id="fecha_notificacion_view">{{ orden.fecha_notificacion }}</span>
+                                <input type="date" class="form-control d-none" name="fecha_notificacion" value="{{ orden.fecha_notificacion }}" id="fecha_notificacion_edit">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Documento de Orden</th>
+                            <td>
+                                <div id="archivo_orden_view">
+                                    {% if orden.archivo_orden_path %}
+                                        <a href="{{ url_for('download_file', filename=orden.archivo_orden_path) }}" target="_blank">
+                                            {{ orden.archivo_orden_path }}
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">No hay documento adjunto.</span>
+                                    {% endif %}
+                                </div>
+                                <div id="archivo_orden_edit" class="d-none">
+                                    <input class="form-control" type="file" name="archivo_orden">
+                                    {% if orden.archivo_orden_path %}
+                                        <small class="form-text text-muted">Dejar en blanco para conservar el archivo actual: {{ orden.archivo_orden_path }}</small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-footer text-end">
+                <div id="view_buttons">
+                    <button type="button" class="btn btn-primary" onclick="toggleEdit(true)">Editar Orden</button>
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">Volver al Dashboard</a>
+                </div>
+                <div id="edit_buttons" class="d-none">
+                    <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary" onclick="toggleEdit(false)">Cancelar</button>
+                </div>
+            </div>
+        </form> <!-- FIN DEL FORMULARIO -->
     </div>
 
     <script>
@@ -145,5 +134,4 @@
             }
         }
     </script>
-</body>
-</html>
+{% endblock %}
