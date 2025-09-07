@@ -1,12 +1,13 @@
-# --- Archivo: src/app.py (Con Comando 'reset-db' Mejorado) ---
+# --- Archivo: src/app.py (Refactorizado con Lógica de Carpetas Centralizada) ---
 
 import os
 import datetime
 from datetime import timedelta
 import click
-import shutil # <--- Importación añadida
+import shutil
+import re
 from flask import (
-    Flask, render_template, request, send_from_directory, g, redirect, url_for, session, flash
+    Flask, render_template, request, send_from_directory, g, redirect, url_for, session, flash, abort
 )
 from flask_migrate import Migrate, upgrade
 from sqlalchemy import func
@@ -15,7 +16,8 @@ from sqlalchemy.exc import IntegrityError
 from .models import db, Requerimiento, Orden, Proveedor, Tenant
 from .forms import TenantForm
 from .config import config_by_name
-from .logic import parse_date_from_form 
+# Importamos nuestra función de ayuda centralizada
+from .logic import parse_date_from_form, get_project_folder_name
 
 migrate = Migrate()
 
@@ -58,11 +60,11 @@ def create_app(config_name):
         @app.before_request
         def set_current_tenant_from_session():
             tenant_id = session.get('current_tenant_id')
-            endpoint_prefix = request.endpoint.split('.')[0] if request.endpoint else ''
-            allowed_endpoints = ['select_tenant', 'set_tenant', 'create_tenant', 'static']
+            endpoint = request.endpoint.split('.')[0] if '.' in (request.endpoint or '') else request.endpoint
+            allowed_endpoints = ['select_tenant', 'set_tenant', 'create_tenant', 'edit_tenant', 'delete_tenant', 'static']
             if tenant_id:
                 g.tenant_id = tenant_id
-            elif endpoint_prefix not in allowed_endpoints:
+            elif endpoint not in allowed_endpoints:
                 return redirect(url_for('select_tenant'))
 
         # --- Rutas Principales (Fuera de Blueprints) ---
@@ -126,16 +128,73 @@ def create_app(config_name):
                     flash(f'Ya existe un proyecto con el nombre "{new_tenant.name}". Por favor, elige otro.', 'warning')
             return render_template('create_tenant.html', title='Crear Nuevo Proyecto', form=form)
 
+        @app.route("/edit-project/<int:tenant_id>", methods=['GET', 'POST'])
+        def edit_tenant(tenant_id):
+            tenant = db.session.get(Tenant, tenant_id)
+            if not tenant:
+                abort(404)
+            
+            old_folder_name = get_project_folder_name(tenant)
+            old_folder_path = os.path.join(project_root, app.config["UPLOAD_FOLDER"], old_folder_name) if old_folder_name else None
+            
+            form = TenantForm(obj=tenant)
+            if form.validate_on_submit():
+                new_name = form.name.data.strip()
+                existing_tenant = db.session.query(Tenant).filter(Tenant.name == new_name, Tenant.id != tenant_id).first()
+
+                if existing_tenant:
+                    flash(f'El nombre "{new_name}" ya está en uso por otro proyecto.', 'warning')
+                else:
+                    tenant.name = new_name
+                    db.session.commit()
+                    
+                    new_folder_name = get_project_folder_name(tenant)
+                    new_folder_path = os.path.join(project_root, app.config["UPLOAD_FOLDER"], new_folder_name) if new_folder_name else None
+                    
+                    if old_folder_path and new_folder_path and os.path.exists(old_folder_path) and old_folder_path != new_folder_path:
+                        try:
+                            os.rename(old_folder_path, new_folder_path)
+                            flash('El nombre del proyecto y su carpeta de archivos se han actualizado.', 'success')
+                        except OSError as e:
+                            flash(f'El nombre del proyecto se actualizó, pero hubo un error al renombrar la carpeta: {e}', 'danger')
+                    else:
+                        flash(f'El nombre del proyecto se ha actualizado a "{new_name}".', 'success')
+                    
+                    return redirect(url_for('select_tenant'))
+            
+            return render_template('edit_project.html', form=form, tenant=tenant)
+
+        @app.route("/delete-project/<int:tenant_id>", methods=['POST'])
+        def delete_tenant(tenant_id):
+            tenant = db.session.get(Tenant, tenant_id)
+            if not tenant:
+                abort(404)
+            try:
+                project_folder_name = get_project_folder_name(tenant)
+                if project_folder_name:
+                    folder_to_delete = os.path.join(project_root, app.config["UPLOAD_FOLDER"], project_folder_name)
+                    if os.path.exists(folder_to_delete):
+                        shutil.rmtree(folder_to_delete)
+
+                db.session.delete(tenant)
+                db.session.commit()
+                flash(f'El proyecto "{tenant.name}" y todo su contenido han sido eliminados con éxito.', 'success')
+
+            except Exception as e:
+                db.session.rollback()
+                flash(f"Ocurrió un error al eliminar el proyecto: {e}", "danger")
+
+            return redirect(url_for('select_tenant'))
+
         @app.route("/uploads/<path:filename>")
         def download_file(filename):
-            return send_from_directory(os.path.join(project_root, app.config["UPLOAD_FOLDER"]), filename)
+            upload_folder_path = os.path.join(project_root, app.config["UPLOAD_FOLDER"])
+            return send_from_directory(upload_folder_path, filename, as_attachment=True)
         
         # --- Comandos CLI ---
         @app.cli.command("reset-db")
         def reset_db_command():
             """Borra y recrea la base de datos Y la carpeta de subidas."""
-            
-            # Lógica para borrar la base de datos
             db_path_str = app.config.get('SQLALCHEMY_DATABASE_URI')
             if db_path_str and db_path_str.startswith('sqlite:///'):
                 db_path = db_path_str.split('sqlite:///', 1)[1]
@@ -145,11 +204,9 @@ def create_app(config_name):
                     os.remove(db_path)
                     click.echo(f"Base de datos eliminada: {db_path}")
             
-            # Lógica añadida para limpiar la carpeta de subidas
             upload_folder = os.path.join(project_root, app.config.get('UPLOAD_FOLDER'))
             if upload_folder and os.path.exists(upload_folder):
                 click.echo(f"Limpiando la carpeta de subidas: {upload_folder}")
-                # Borra todo el contenido de la carpeta
                 for filename in os.listdir(upload_folder):
                     file_path = os.path.join(upload_folder, filename)
                     try:
@@ -160,7 +217,6 @@ def create_app(config_name):
                     except Exception as e:
                         click.echo(f'Error al borrar {file_path}. Razón: {e}')
             
-            # Ejecutar 'db upgrade' para crear la base de datos y las tablas
             click.echo("Creando base de datos desde migraciones...")
             upgrade()
             click.echo("Base de datos y carpeta de subidas reiniciadas con éxito.")

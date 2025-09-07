@@ -1,4 +1,4 @@
-<!-- Contenido actualizado para: src/templates/select_tenant.html -->
+<!-- src/templates/select_tenant.html (Con botones de Editar y Eliminar) -->
 {% extends "base.html" %}
 
 {% block title %}{{ title }}{% endblock %}
@@ -25,22 +25,36 @@
                         Proyectos Existentes
                     </div>
                     <div class="list-group list-group-flush">
-                        <!-- Usamos un loop con 'loop.index' para la enumeración -->
                         {% for tenant in tenants %}
-                            <a href="{{ url_for('set_tenant', tenant_id=tenant.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <!-- Enumeración -->
-                                    <span class="badge bg-primary rounded-pill me-3">{{ loop.index }}</span>
-                                    <!-- Nombre del Proyecto -->
-                                    <h5 class="mb-0">{{ tenant.name }}</h5>
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <!-- Hacemos que el nombre sea el enlace principal para seleccionarlo -->
+                                <a href="{{ url_for('set_tenant', tenant_id=tenant.id) }}" class="text-decoration-none text-dark flex-grow-1">
+                                    <div class="d-flex align-items-center">
+                                        <span class="badge bg-primary rounded-pill me-3">{{ loop.index }}</span>
+                                        <div class="ms-2">
+                                            <h5 class="mb-0">{{ tenant.name }}</h5>
+                                            {% if tenant.created_at %}
+                                                <small class="text-muted">
+                                                    Creado: {{ tenant.created_at.strftime('%d-%m-%Y') }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </a>
+                                
+                                <!-- Contenedor para los nuevos botones de acción -->
+                                <div class="ms-3">
+                                    <!-- Botón para Editar -->
+                                    <a href="{{ url_for('edit_tenant', tenant_id=tenant.id) }}" class="btn btn-sm btn-warning" title="Editar Nombre"><i class="bi bi-pencil-fill"></i></a>
+                                    
+                                    <!-- Formulario para Eliminar -->
+                                    <form action="{{ url_for('delete_tenant', tenant_id=tenant.id) }}" method="POST" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar este proyecto?\n¡ESTA ACCIÓN ES IRREVERSIBLE Y BORRARÁ TODOS SUS DATOS ASOCIADOS!');" title="Eliminar Proyecto">
+                                            <i class="bi bi-trash-fill"></i>
+                                        </button>
+                                    </form>
                                 </div>
-                                <!-- Fecha de Creación (si existe) -->
-                                {% if tenant.created_at %}
-                                    <small class="text-muted">
-                                        Creado: {{ tenant.created_at.strftime('%d-%m-%Y') }}
-                                    </small>
-                                {% endif %}
-                            </a>
+                            </div>
                         {% endfor %}
                     </div>
                 </div>

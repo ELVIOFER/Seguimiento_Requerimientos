@@ -1,10 +1,9 @@
-# --- src/models.py (Actualizado con el modelo Documento) ---
+# --- src/models.py (Actualizado con Relaciones Inversas en Tenant) ---
 
 from flask_sqlalchemy import SQLAlchemy
 from flask import g
 from sqlalchemy.schema import MetaData
 from sqlalchemy.orm import declared_attr, Session
-# ===> AÑADIMOS 'Date' y 'DateTime' para los nuevos campos de fecha <===
 from sqlalchemy import event, Date, DateTime
 
 # Convención de nombres
@@ -15,23 +14,27 @@ naming_convention = {
     "pk": "pk_%(table_name)s"
 }
 
-# 1. Creamos una instancia de SQLAlchemy normal.
 db = SQLAlchemy(metadata=MetaData(naming_convention=naming_convention))
 
-# 2. Definimos todos nuestros modelos
 class Tenant(db.Model):
     __tablename__ = 'tenants'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False, comment="Nombre único del inquilino/cliente")
     created_at = db.Column(DateTime, server_default=db.func.now())
+    
+    # ===> RELACIONES INVERSAS AÑADIDAS <===
+    # Esto permite que, desde un objeto Tenant, podamos acceder a todos los datos asociados.
+    # Ej: mi_proyecto.requerimientos
+    # El 'cascade' asegura que si se borra un Tenant, se borren también todos estos registros.
+    requerimientos = db.relationship('Requerimiento', backref='tenant', lazy='dynamic', cascade="all, delete-orphan")
+    proveedores = db.relationship('Proveedor', backref='tenant', lazy='dynamic', cascade="all, delete-orphan")
+    documentos = db.relationship('Documento', backref='tenant', lazy='dynamic', cascade="all, delete-orphan")
+    # Nota: No añadimos 'ordenes' aquí porque ya están vinculadas a través de 'requerimientos'.
 
 class TenantScopedMixin:
     @declared_attr
     def tenant_id(cls):
         return db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False, index=True)
-    @declared_attr
-    def tenant(cls):
-        return db.relationship('Tenant')
 
 class Proveedor(db.Model, TenantScopedMixin):
     __tablename__ = 'proveedor'
@@ -46,7 +49,8 @@ class Requerimiento(db.Model, TenantScopedMixin):
     descripcion = db.Column(db.Text, nullable=False)
     fecha_presentacion = db.Column(db.Date, nullable=False)
     estado = db.Column(db.String(50), default='En Mesa de Partes')
-    archivo_path = db.Column(db.String(300), nullable=True) # Aumentado el tamaño
+    archivo_path = db.Column(db.String(300), nullable=True)
+    # Aquí cambiamos el 'backref' para que coincida con el nombre en Tenant.
     orden = db.relationship('Orden', backref='requerimiento', uselist=False, lazy=True, cascade="all, delete-orphan")
 
 class Orden(db.Model, TenantScopedMixin):
@@ -57,35 +61,27 @@ class Orden(db.Model, TenantScopedMixin):
     fecha_emision = db.Column(db.Date, nullable=True)
     fecha_notificacion = db.Column(db.Date, nullable=True)
     plazo_ejecucion_dias = db.Column(db.Integer, nullable=True)
-    archivo_orden_path = db.Column(db.String(300), nullable=True) # Aumentado el tamaño
+    archivo_orden_path = db.Column(db.String(300), nullable=True)
     requerimiento_id = db.Column(db.Integer, db.ForeignKey('requerimiento.id'), unique=True, nullable=False)
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedor.id'), nullable=False)
 
-# ===> AÑADIMOS EL NUEVO MODELO PARA EL TRÁMITE DOCUMENTARIO <===
 class Documento(db.Model, TenantScopedMixin):
     __tablename__ = 'documentos'
     id = db.Column(db.Integer, primary_key=True)
-    
-    # --- Datos Básicos ---
-    tipo = db.Column(db.String(50), nullable=False, index=True)  # "Emitido" o "Recibido"
+    tipo = db.Column(db.String(50), nullable=False, index=True)
     numero_doc = db.Column(db.String(100), nullable=False)
     asunto = db.Column(db.Text, nullable=False)
-    fecha_doc = db.Column(Date, nullable=False) # Usando el tipo de dato correcto
+    fecha_doc = db.Column(db.Date, nullable=False)
     remitente_destinatario = db.Column(db.String(200), comment="Quién lo envía o a quién se envía")
-    
-    # --- Trazabilidad y Recordatorios ---
-    estado = db.Column(db.String(50), nullable=False, default='Pendiente', index=True) # Ej: Pendiente, Respondido, Cerrado
-    fecha_limite_respuesta = db.Column(Date, nullable=True) # Para los recordatorios
+    estado = db.Column(db.String(50), nullable=False, default='Pendiente', index=True)
+    fecha_limite_respuesta = db.Column(db.Date, nullable=True)
     observaciones = db.Column(db.Text, nullable=True)
-    
-    # --- Gestión de Archivos ---
     archivo_path = db.Column(db.String(300), nullable=True)
-    
-    # --- Relación Padre-Hijo para el seguimiento ---
     documento_padre_id = db.Column(db.Integer, db.ForeignKey('documentos.id'), nullable=True)
     respuestas = db.relationship('Documento', backref=db.backref('documento_padre', remote_side=[id]), lazy='dynamic')
+    created_at = db.Column(db.DateTime, server_default=db.func.now())
 
-    created_at = db.Column(DateTime, server_default=db.func.now())
+# ... (Los eventos 'do_orm_execute' y 'before_insert' se quedan exactamente igual) ...
 
 # =============================================================
 

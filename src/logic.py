@@ -1,4 +1,4 @@
-# --- src/logic.py (Simplificado después de la refactorización de fechas) ---
+# --- src/logic.py (Con Lógica de Carpetas Centralizada) ---
 
 from datetime import datetime, timedelta, date
 from .models import Requerimiento, Orden
@@ -16,14 +16,10 @@ def parse_date_from_form(date_string):
     if not date_string:
         return None
     try:
-        # date.fromisoformat() es la forma moderna y eficiente de parsear 'YYYY-MM-DD'
         return date.fromisoformat(date_string)
     except (ValueError, TypeError):
         print(f"Advertencia: Formato de fecha inválido encontrado: '{date_string}'")
         return None
-
-# LA FUNCIÓN 'procesar_item_requerimiento' HA SIDO ELIMINADA.
-# La lógica de cálculo y formato ahora vive en las plantillas.
 
 def calcular_estadisticas(db_session):
     """
@@ -41,19 +37,34 @@ def calcular_estadisticas(db_session):
     
     return estadisticas
 
-def get_project_folder_name():
+# ===> FUNCIÓN 'get_project_folder_name' ACTUALIZADA <===
+def get_project_folder_name(tenant_obj=None):
     """
-    Genera un nombre de carpeta seguro a partir del nombre del proyecto actual.
+    Genera un nombre de carpeta seguro y único para un proyecto.
+    - Si se pasa 'tenant_obj', usa ese objeto para generar el nombre.
+    - Si no, usa el proyecto activo en la sesión actual.
+    Ej: "Construcción Edificio Central" (id=9) -> "construccion-edificio-central_9"
     """
-    if not g or not hasattr(g, 'tenant_id'):
+    project_name = None
+    project_id = None
+
+    if tenant_obj:
+        # Modo explícito: usamos el objeto que nos pasaron
+        project_name = tenant_obj.name
+        project_id = tenant_obj.id
+    elif g and hasattr(g, 'tenant_id'):
+        # Modo implícito: usamos los datos de la sesión actual
+        project_name = session.get('current_tenant_name', 'default-project')
+        project_id = g.tenant_id
+    else:
+        # No hay suficiente información para generar un nombre de carpeta
         return None
 
-    project_name = session.get('current_tenant_name', 'default-project')
-    
+    # Lógica centralizada para crear el nombre ("slugify")
     s = project_name.lower()
     s = re.sub(r'[^a-z0-9]+', '-', s).strip('-')
-    s = s[:50]
-    s = f"{s}_{g.tenant_id}"
+    s = s[:50] # Acortamos para evitar nombres de carpeta excesivamente largos
+    s = f"{s}_{project_id}"
     
     return s
 
@@ -66,6 +77,7 @@ def save_project_file(file_storage):
         return None
 
     filename = secure_filename(file_storage.filename)
+    # get_project_folder_name() ahora usa la sesión actual implícitamente
     project_folder = get_project_folder_name()
     
     if not project_folder:
