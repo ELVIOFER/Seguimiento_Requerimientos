@@ -1,0 +1,56 @@
+<!-- Contenido actualizado para: src/templates/select_tenant.html -->
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="text-center mb-4">
+                <h1>Seleccione el Proyecto/Contexto</h1>
+                <p class="lead text-muted">Elija un proyecto existente o cree uno nuevo para empezar a trabajar.</p>
+            </div>
+
+            <div class="d-grid gap-2 mb-4">
+                <a href="{{ url_for('create_tenant') }}" class="btn btn-success btn-lg">
+                    <i class="bi bi-plus-circle me-2"></i>Crear Nuevo Proyecto
+                </a>
+            </div>
+
+            {% if tenants %}
+                <div class="card">
+                    <div class="card-header">
+                        Proyectos Existentes
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <!-- Usamos un loop con 'loop.index' para la enumeración -->
+                        {% for tenant in tenants %}
+                            <a href="{{ url_for('set_tenant', tenant_id=tenant.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    <!-- Enumeración -->
+                                    <span class="badge bg-primary rounded-pill me-3">{{ loop.index }}</span>
+                                    <!-- Nombre del Proyecto -->
+                                    <h5 class="mb-0">{{ tenant.name }}</h5>
+                                </div>
+                                <!-- Fecha de Creación (si existe) -->
+                                {% if tenant.created_at %}
+                                    <small class="text-muted">
+                                        Creado: {{ tenant.created_at.strftime('%d-%m-%Y') }}
+                                    </small>
+                                {% endif %}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info mt-4" role="alert">
+                    No hay proyectos creados. ¡Crea el primero usando el botón de arriba!
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

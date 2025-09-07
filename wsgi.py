@@ -1,13 +1,16 @@
-# --- wsgi.py (Versión Final y Limpia) ---
+# Contenido para wsgi.py
+
 import os
 from src.app import create_app
 
-# Lee la variable de entorno para saber qué configuración cargar
-config_name = os.getenv('FLASK_ENV', 'default')
+# Aquí está la magia: le decimos a Flask que use la configuración 'development'
+# a menos que una variable de entorno FLASK_ENV diga lo contrario.
+# Esto hace que 'development' sea nuestro modo de trabajo por defecto.
+config_name = os.getenv('FLASK_ENV') or 'development'
 
-# Crea la aplicación usando la factoría
+# Creamos la aplicación usando esa configuración.
 app = create_app(config_name)
 
-# Este bloque permite ejecutar el archivo directamente con 'python wsgi.py'
+# Esto es útil si quieres ejecutar directamente con `python wsgi.py`
 if __name__ == "__main__":
     app.run()

@@ -1,0 +1,102 @@
+<!-- src/templates/documento/ver_documento.html (Completo y con todas las funcionalidades) -->
+{% extends "base.html" %}
+
+{% block title %}Detalles del Documento{% endblock %}
+
+{% block content %}
+    <a href="{{ url_for('documento.dashboard') }}" class="btn btn-secondary mb-3"><i class="bi bi-arrow-left"></i> Volver al Dashboard</a>
+
+    <!-- Tarjeta del Documento Principal -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Detalles del Documento: {{ documento.numero_doc }}</h4>
+            <span class="badge bg-primary">{{ documento.tipo }}</span>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Asunto:</dt>
+                <dd class="col-sm-9">{{ documento.asunto }}</dd>
+
+                <dt class="col-sm-3">Fecha:</dt>
+                <dd class="col-sm-9">{{ documento.fecha_doc.strftime('%d-%m-%Y') }}</dd>
+
+                <dt class="col-sm-3">{{ 'Remitente' if documento.tipo == 'Recibido' else 'Destinatario' }}:</dt>
+                <dd class="col-sm-9">{{ documento.remitente_destinatario }}</dd>
+
+                <dt class="col-sm-3">Estado:</dt>
+                <dd class="col-sm-9"><span class="badge bg-info text-dark">{{ documento.estado }}</span></dd>
+                
+                {% if documento.fecha_limite_respuesta %}
+                    <dt class="col-sm-3">Fecha Límite Respuesta:</dt>
+                    <dd class="col-sm-9">{{ documento.fecha_limite_respuesta.strftime('%d-%m-%Y') }}</dd>
+                {% endif %}
+
+                {% if documento.observaciones %}
+                    <dt class="col-sm-3">Observaciones:</dt>
+                    <dd class="col-sm-9">{{ documento.observaciones }}</dd>
+                {% endif %}
+                
+                {% if documento.archivo_path %}
+                    <dt class="col-sm-3">Archivo Adjunto:</dt>
+                    <dd class="col-sm-9">
+                        <a href="{{ url_for('download_file', filename=documento.archivo_path) }}" target="_blank">
+                            <i class="bi bi-paperclip"></i> Descargar Archivo
+                        </a>
+                    </dd>
+                {% endif %}
+            </dl>
+            <hr>
+            <div class="d-flex justify-content-end align-items-center">
+                {% if documento.tipo == 'Recibido' and documento.estado == 'Pendiente' %}
+                    <a href="{{ url_for('documento.responder_documento', doc_id=documento.id) }}" class="btn btn-success"><i class="bi bi-reply-fill"></i> Responder</a>
+                {% endif %}
+
+                <a href="{{ url_for('documento.editar_documento', doc_id=documento.id) }}" class="btn btn-warning ms-2" title="Editar"><i class="bi bi-pencil-fill"></i> Editar</a>
+
+                {% if not respuestas %}
+                    <form action="{{ url_for('documento.eliminar_documento', doc_id=documento.id) }}" method="POST" class="ms-2">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de que quieres eliminar este documento? Esta acción no se puede deshacer.');" title="Eliminar">
+                            <i class="bi bi-trash-fill"></i> Eliminar
+                        </button>
+                    </form>
+                {% endif %}
+
+                <!-- ===> FORMULARIO DE CAMBIO DE ESTADO AÑADIDO <=== -->
+                <form action="{{ url_for('documento.cambiar_estado', doc_id=documento.id) }}" method="POST" class="ms-2 d-flex align-items-center">
+                    <select name="estado" class="form-select form-select-sm" style="width: auto;" aria-label="Cambiar estado">
+                        <option value="Pendiente" {% if documento.estado == 'Pendiente' %}selected{% endif %}>Pendiente</option>
+                        <option value="Respondido" {% if documento.estado == 'Respondido' %}selected{% endif %}>Respondido</option>
+                        <option value="Cerrado" {% if documento.estado == 'Cerrado' %}selected{% endif %}>Cerrado</option>
+                        <option value="Archivado" {% if documento.estado == 'Archivado' %}selected{% endif %}>Archivado</option>
+                    </select>
+                    <button type="submit" class="btn btn-secondary btn-sm ms-1">Cambiar</button>
+                </form>
+                <!-- ============================================= -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial de Respuestas -->
+    <h4 class="mb-3">Historial de Trazabilidad</h4>
+    
+    {% if documento.documento_padre %}
+        <div class="alert alert-light">
+            Este documento es una respuesta a: 
+            <a href="{{ url_for('documento.ver_documento', doc_id=documento.documento_padre.id) }}">{{ documento.documento_padre.numero_doc }} - "{{ documento.documento_padre.asunto }}"</a>
+        </div>
+    {% endif %}
+
+    {% for respuesta in respuestas %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <p>
+                    <strong>Respuesta:</strong> <a href="{{ url_for('documento.ver_documento', doc_id=respuesta.id) }}">{{ respuesta.numero_doc }}</a>
+                    <span class="text-muted float-end">{{ respuesta.fecha_doc.strftime('%d-%m-%Y') }}</span>
+                </p>
+                <p class="card-text"><strong>Asunto:</strong> {{ respuesta.asunto }}</p>
+            </div>
+        </div>
+    {% else %}
+        <p class="text-muted">Este documento aún no tiene respuestas.</p>
+    {% endfor %}
+{% endblock %}

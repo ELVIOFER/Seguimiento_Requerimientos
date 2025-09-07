@@ -1,0 +1,142 @@
+<!-- src/templates/documento/dashboard.html (Con Búsqueda y Alertas Visuales) -->
+{% extends "base.html" %}
+
+{% block title %}Trámite Documentario{% endblock %}
+
+{% block content %}
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Dashboard de Trámite Documentario</h1>
+        <a href="{{ url_for('documento.nuevo_documento') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Registrar Nuevo Documento
+        </a>
+    </div>
+
+    <!-- ===> FORMULARIO DE BÚSQUEDA AÑADIDO <=== -->
+    <form method="GET" action="{{ url_for('documento.dashboard') }}" class="mb-4">
+        <div class="input-group">
+            <input type="text" class="form-control" name="q" placeholder="Buscar por N°, asunto o remitente/destinatario..." value="{{ query_search or '' }}">
+            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i> Buscar</button>
+            <a href="{{ url_for('documento.dashboard') }}" class="btn btn-outline-danger" title="Limpiar búsqueda">X</a>
+        </div>
+    </form>
+    <!-- ==================================== -->
+
+    <!-- Tabla de Documentos Recibidos Pendientes -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4><i class="bi bi-arrow-down-circle-fill text-primary me-2"></i>Documentos Recibidos Pendientes</h4>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 15%;">N° Documento</th>
+                        <th style="width: 10%;">Fecha</th>
+                        <th style="width: 15%;">Remitente</th>
+                        <th>Asunto</th>
+                        <th style="width: 10%;">Estado</th>
+                        <th style="width: 10%;">Límite Respuesta</th>
+                        <th style="width: 12%;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in recibidos %}
+                        {# ===> LÓGICA DE CLASES CSS PARA RESALTAR FILAS URGENTES <=== #}
+                        {% set row_class = '' %}
+                        {% if doc.fecha_limite_respuesta %}
+                            {% set days_diff = (doc.fecha_limite_respuesta - today).days %}
+                            {% if days_diff < 0 %}
+                                {% set row_class = 'table-danger' %}
+                            {% elif days_diff <= 3 %}
+                                {% set row_class = 'table-warning' %}
+                            {% endif %}
+                        {% endif %}
+                        
+                        <tr class="{{ row_class }}">
+                        {# ========================================================= #}
+                            <td>
+                                {{ doc.numero_doc }}
+                                {% if doc.archivo_path %}
+                                    <a href="{{ url_for('download_file', filename=doc.archivo_path) }}" target="_blank" title="Ver adjunto"><i class="bi bi-paperclip"></i></a>
+                                {% endif %}
+                            </td>
+                            <td>{{ doc.fecha_doc.strftime('%d-%m-%Y') }}</td>
+                            <td>{{ doc.remitente_destinatario }}</td>
+                            <td>{{ doc.asunto }}</td>
+                            <td>
+                                {% if doc.estado == 'Pendiente' %}
+                                    <span class="badge bg-warning text-dark">{{ doc.estado }}</span>
+                                {% elif doc.estado == 'Respondido' %}
+                                    <span class="badge bg-success">{{ doc.estado }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ doc.estado }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doc.fecha_limite_respuesta %}
+                                    {{ doc.fecha_limite_respuesta.strftime('%d-%m-%Y') }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doc.estado == 'Pendiente' %}
+                                    <a href="{{ url_for('documento.responder_documento', doc_id=doc.id) }}" class="btn btn-sm btn-success" title="Responder"><i class="bi bi-reply-fill"></i></a>
+                                {% endif %}
+                                <a href="{{ url_for('documento.ver_documento', doc_id=doc.id) }}" class="btn btn-sm btn-info" title="Ver Detalles"><i class="bi bi-eye-fill"></i></a>
+                                <a href="{{ url_for('documento.editar_documento', doc_id=doc.id) }}" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil-fill"></i></a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-3">No hay documentos recibidos pendientes.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tabla de Últimos Documentos Emitidos -->
+    <div class="card">
+        <div class="card-header">
+            <h4><i class="bi bi-arrow-up-circle-fill text-success me-2"></i>Últimos Documentos Emitidos</h4>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 20%;">N° Documento</th>
+                        <th style="width: 15%;">Fecha</th>
+                        <th style="width: 20%;">Destinatario</th>
+                        <th>Asunto</th>
+                        <th style="width: 12%;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in emitidos %}
+                        <tr>
+                            <td>
+                                {{ doc.numero_doc }}
+                                {% if doc.archivo_path %}
+                                    <a href="{{ url_for('download_file', filename=doc.archivo_path) }}" target="_blank" title="Ver adjunto"><i class="bi bi-paperclip"></i></a>
+                                {% endif %}
+                            </td>
+                            <td>{{ doc.fecha_doc.strftime('%d-%m-%Y') }}</td>
+                            <td>{{ doc.remitente_destinatario }}</td>
+                            <td>{{ doc.asunto }}</td>
+                            <td>
+                                <a href="{{ url_for('documento.ver_documento', doc_id=doc.id) }}" class="btn btn-sm btn-info" title="Ver Detalles"><i class="bi bi-eye-fill"></i></a>
+                                <a href="{{ url_for('documento.editar_documento', doc_id=doc.id) }}" class="btn btn-sm btn-warning" title="Editar"><i class="bi bi-pencil-fill"></i></a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">No se han emitido documentos recientemente.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

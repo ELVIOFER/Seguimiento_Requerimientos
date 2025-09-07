@@ -1,0 +1,85 @@
+<!-- src/templates/documento/editar_documento.html -->
+{% extends "base.html" %}
+
+{% block title %}Editar Documento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="mb-4">Editar Documento: {{ form.numero_doc.data }}</h1>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('documento.editar_documento', doc_id=documento.id) }}" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.tipo.label(class="form-label") }}
+                            {{ form.tipo(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.numero_doc.label(class="form-label") }}
+                            {{ form.numero_doc(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.fecha_doc.label(class="form-label") }}
+                            {{ form.fecha_doc(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.remitente_destinatario.label(class="form-label") }}
+                        {{ form.remitente_destinatario(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.asunto.label(class="form-label") }}
+                        {{ form.asunto(class="form-control", rows=3) }}
+                    </div>
+                    <div class="mb-3" id="fecha-limite-container">
+                        {{ form.fecha_limite_respuesta.label(class="form-label") }}
+                        {{ form.fecha_limite_respuesta(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.observaciones.label(class="form-label") }}
+                        {{ form.observaciones(class="form-control", rows=2) }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="archivo" class="form-label">Reemplazar Archivo (Opcional)</label>
+                        <input class="form-control" type="file" name="archivo" id="archivo">
+                        {% if documento.archivo_path %}
+                            <small class="form-text text-muted">Archivo actual: 
+                                <a href="{{ url_for('download_file', filename=documento.archivo_path) }}" target="_blank">
+                                    {{ documento.archivo_path.split('/')[-1] }}
+                                </a>
+                            </small>
+                        {% endif %}
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ url_for('documento.ver_documento', doc_id=documento.id) }}" class="btn btn-secondary me-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary", value="Guardar Cambios") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+    <!-- Reutilizamos el mismo script para ocultar/mostrar el campo de fecha -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tipoSelect = document.getElementById('tipo');
+            const fechaLimiteContainer = document.getElementById('fecha-limite-container');
+            function toggleFechaLimite() {
+                if (tipoSelect.value === 'Emitido') { fechaLimiteContainer.style.display = 'none'; } 
+                else { fechaLimiteContainer.style.display = 'block'; }
+            }
+            toggleFechaLimite();
+            tipoSelect.addEventListener('change', toggleFechaLimite);
+        });
+    </script>
+{% endblock %}

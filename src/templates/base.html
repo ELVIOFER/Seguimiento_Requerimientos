@@ -4,28 +4,31 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <!-- El título ahora es un bloque que las plantillas hijas pueden cambiar -->
     <title>{% block title %}Control de Requerimientos{% endblock %}</title>
     
-    <!-- Hoja de estilos de Bootstrap -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Iconos de Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 </head>
 <body>
     <!-- MENÚ DE NAVEGACIÓN (NAVBAR) -->
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('index') }}">GestiónPro</a>
+            <!-- El enlace principal que te lleva a la selección de proyectos -->
+            <a class="navbar-brand" href="{{ url_for('select_tenant') }}">GestiónPro</a>
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            
+            <!-- Contenedor para los enlaces de navegación -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="{{ url_for('index') }}">Dashboard</a>
+                        <a class="nav-link" href="{{ url_for('index') }}">Requerimientos/Órdenes</a>
                     </li>
-                    <!-- Aquí podríamos añadir más enlaces en el futuro, como 'Estadísticas' -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('documento.dashboard') }}">Trámite Documentario</a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -33,7 +36,6 @@
 
     <!-- CONTENEDOR PRINCIPAL -->
     <main class="container mt-4">
-        <!-- Bloque para mostrar mensajes flash (alertas) -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -45,16 +47,18 @@
             {% endif %}
         {% endwith %}
 
-        <!-- ESTE ES EL HUECO QUE RELLENARÁN LAS PLANTILLAS HIJAS -->
         {% block content %}{% endblock %}
     </main>
     
     <!-- PIE DE PÁGINA (FOOTER) -->
     <footer class="text-center text-muted mt-5 mb-3">
-        <p>&copy; {{ now().strftime('%Y') }} - Mi Aplicación de Seguimiento</p>
+        <!-- Necesitamos pasar 'now' desde un context_processor para que funcione aquí -->
+        <p>&copy; {% if now %}{{ now().strftime('%Y') }}{% else %}2025{% endif %} - Mi Aplicación de Seguimiento</p>
     </footer>
 
-    <!-- Scripts de Bootstrap (importante para funcionalidades como los menús desplegables) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Bloque para scripts adicionales de las plantillas hijas -->
+    {% block scripts %}{% endblock %}
 </body>
 </html>

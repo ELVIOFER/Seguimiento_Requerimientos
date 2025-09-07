@@ -1,0 +1,66 @@
+<!-- src/templates/documento/responder.html -->
+{% extends "base.html" %}
+
+{% block title %}Responder a Documento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        
+        <!-- Información del documento original -->
+        <div class="alert alert-secondary">
+            <h5 class="alert-heading">Respondiendo a:</h5>
+            <p class="mb-0"><strong>N°:</strong> {{ documento_padre.numero_doc }}</p>
+            <p class="mb-0"><strong>Asunto:</strong> {{ documento_padre.asunto }}</p>
+        </div>
+
+        <h1 class="mb-4">Registrar Documento de Respuesta</h1>
+
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('documento.responder_documento', doc_id=documento_padre.id) }}" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <!-- El formulario es casi idéntico al de 'crear_documento.html' -->
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.tipo.label(class="form-label") }}
+                            {{ form.tipo(class="form-select") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.numero_doc.label(class="form-label") }}
+                            {{ form.numero_doc(class="form-control") }}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.fecha_doc.label(class="form-label") }}
+                            {{ form.fecha_doc(class="form-control") }}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.remitente_destinatario.label(class="form-label") }}
+                        {{ form.remitente_destinatario(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.asunto.label(class="form-label") }}
+                        {{ form.asunto(class="form-control", rows=3) }}
+                    </div>
+                    <!-- El campo de fecha límite no es necesario aquí, ya que es una respuesta -->
+                    <div class="mb-3">
+                        {{ form.observaciones.label(class="form-label") }}
+                        {{ form.observaciones(class="form-control", rows=2) }}
+                    </div>
+                    <div class="mb-3">
+                        <label for="archivo" class="form-label">Adjuntar Archivo de Respuesta (Opcional)</label>
+                        <input class="form-control" type="file" name="archivo" id="archivo">
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ url_for('documento.ver_documento', doc_id=documento_padre.id) }}" class="btn btn-secondary me-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

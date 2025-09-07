@@ -8,7 +8,6 @@
             <h3>Detalles de Orden para Requerimiento: {{ orden.requerimiento.numero_requerimiento }}</h3>
         </div>
         
-        <!-- INICIO DEL FORMULARIO -->
         <form method="post" enctype="multipart/form-data" action="{{ url_for('orden.editar_orden', orden_id=orden.id) }}">
             <div class="card-body">
                 <table class="table table-bordered">
@@ -22,7 +21,8 @@
                             <th>Documento del Requerimiento</th>
                             <td>
                                 <a href="{{ url_for('download_file', filename=orden.requerimiento.archivo_path) }}" target="_blank" class="btn btn-outline-info btn-sm">
-                                    Ver Documento ({{ orden.requerimiento.archivo_path }})
+                                    <!-- Mostramos solo el nombre del archivo -->
+                                    Ver Documento ({{ orden.requerimiento.archivo_path.split('/')[-1] }})
                                 </a>
                             </td>
                         </tr>
@@ -30,11 +30,8 @@
                         <tr>
                             <th>Proveedor</th>
                             <td>
-                                <!-- ====================================================================== -->
-                                <!-- <<< --- ESTA ES LA LÍNEA CORREGIDA --- >>> -->
                                 <span id="proveedor_nombre_view">{{ orden.proveedor.nombre }}</span>
                                 <input type="text" class="form-control d-none" name="proveedor_nombre" value="{{ orden.proveedor.nombre }}" id="proveedor_nombre_edit">
-                                <!-- ====================================================================== -->
                             </td>
                         </tr>
                         <tr>
@@ -65,15 +62,17 @@
                         <tr>
                             <th>Fecha de Emisión</th>
                             <td>
-                                <span id="fecha_emision_view">{{ orden.fecha_emision }}</span>
-                                <input type="date" class="form-control d-none" name="fecha_emision" value="{{ orden.fecha_emision }}" id="fecha_emision_edit">
+                                <span id="fecha_emision_view">{{ orden.fecha_emision.strftime('%d-%m-%Y') if orden.fecha_emision else 'N/A' }}</span>
+                                <input type="date" class="form-control d-none" name="fecha_emision" 
+                                       value="{{ orden.fecha_emision.strftime('%Y-%m-%d') if orden.fecha_emision else '' }}" id="fecha_emision_edit">
                             </td>
                         </tr>
                         <tr>
                             <th>Fecha de Notificación</th>
                             <td>
-                                <span id="fecha_notificacion_view">{{ orden.fecha_notificacion }}</span>
-                                <input type="date" class="form-control d-none" name="fecha_notificacion" value="{{ orden.fecha_notificacion }}" id="fecha_notificacion_edit">
+                                <span id="fecha_notificacion_view">{{ orden.fecha_notificacion.strftime('%d-%m-%Y') if orden.fecha_notificacion else 'N/A' }}</span>
+                                <input type="date" class="form-control d-none" name="fecha_notificacion" 
+                                       value="{{ orden.fecha_notificacion.strftime('%Y-%m-%d') if orden.fecha_notificacion else '' }}" id="fecha_notificacion_edit">
                             </td>
                         </tr>
                         <tr>
@@ -82,7 +81,7 @@
                                 <div id="archivo_orden_view">
                                     {% if orden.archivo_orden_path %}
                                         <a href="{{ url_for('download_file', filename=orden.archivo_orden_path) }}" target="_blank">
-                                            {{ orden.archivo_orden_path }}
+                                            {{ orden.archivo_orden_path.split('/')[-1] }}
                                         </a>
                                     {% else %}
                                         <span class="text-muted">No hay documento adjunto.</span>
@@ -91,7 +90,7 @@
                                 <div id="archivo_orden_edit" class="d-none">
                                     <input class="form-control" type="file" name="archivo_orden">
                                     {% if orden.archivo_orden_path %}
-                                        <small class="form-text text-muted">Dejar en blanco para conservar el archivo actual: {{ orden.archivo_orden_path }}</small>
+                                        <small class="form-text text-muted">Dejar en blanco para conservar el archivo actual: {{ orden.archivo_orden_path.split('/')[-1] }}</small>
                                     {% endif %}
                                 </div>
                             </td>
@@ -110,7 +109,7 @@
                     <button type="button" class="btn btn-secondary" onclick="toggleEdit(false)">Cancelar</button>
                 </div>
             </div>
-        </form> <!-- FIN DEL FORMULARIO -->
+        </form>
     </div>
 
     <script>

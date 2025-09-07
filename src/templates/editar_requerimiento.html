@@ -9,23 +9,22 @@
     <form method="post" enctype="multipart/form-data">
         <div class="mb-3">
             <label for="numero_requerimiento" class="form-label">Número de Requerimiento</label>
-            <!-- Usamos 'value' para pre-rellenar el campo -->
             <input type="text" class="form-control" id="numero_requerimiento" name="numero_requerimiento" value="{{ req.numero_requerimiento }}" required>
         </div>
         <div class="mb-3">
             <label for="descripcion" class="form-label">Descripción o Asunto</label>
-            <!-- En un textarea, el valor va entre las etiquetas -->
             <textarea class="form-control" id="descripcion" name="descripcion" rows="3" required>{{ req.descripcion }}</textarea>
         </div>
         <div class="row">
             <div class="col-md-6 mb-3">
                 <label for="fecha_presentacion" class="form-label">Fecha de Presentación</label>
-                <input type="date" class="form-control" id="fecha_presentacion" name="fecha_presentacion" value="{{ req.fecha_presentacion }}" required>
+                <!-- Formateamos el objeto Date al string 'YYYY-MM-DD' que el input espera -->
+                <input type="date" class="form-control" id="fecha_presentacion" name="fecha_presentacion" 
+                       value="{{ req.fecha_presentacion.strftime('%Y-%m-%d') if req.fecha_presentacion else '' }}" required>
             </div>
             <div class="col-md-6 mb-3">
                 <label for="estado" class="form-label">Estado</label>
                 <select class="form-select" id="estado" name="estado" required>
-                    <!-- Hacemos que la opción correcta esté seleccionada -->
                     <option value="En Mesa de Partes" {% if req.estado == 'En Mesa de Partes' %}selected{% endif %}>En Mesa de Partes</option>
                     <option value="En Gerencia" {% if req.estado == 'En Gerencia' %}selected{% endif %}>En Gerencia</option>
                     <option value="En Logística" {% if req.estado == 'En Logística' %}selected{% endif %}>En Logística</option>
@@ -34,14 +33,13 @@
                 </select>
             </div>
         </div>
-        <!-- CAMPO PARA SUBIR/CAMBIAR EL ARCHIVO -->
         <div class="mb-3">
             <label for="archivo" class="form-label">Cambiar Documento de Requerimiento (Opcional)</label>
             <input class="form-control" type="file" id="archivo" name="archivo" accept=".pdf,.doc,.docx,.xls,.xlsx">
             {% if req.archivo_path %}
                 <small class="form-text text-muted">
                     Archivo actual: 
-                    <a href="{{ url_for('download_file', filename=req.archivo_path) }}" target="_blank">{{ req.archivo_path }}</a>.
+                    <a href="{{ url_for('download_file', filename=req.archivo_path) }}" target="_blank">{{ req.archivo_path.split('/')[-1] }}</a>.
                     Deje el campo de arriba en blanco para conservarlo.
                 </small>
             {% else %}

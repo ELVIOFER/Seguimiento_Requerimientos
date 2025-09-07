@@ -1,0 +1,104 @@
+<!-- src/templates/documento/crear_documento.html (Con JavaScript para el formulario inteligente) -->
+{% extends "base.html" %}
+
+{% block title %}Registrar Nuevo Documento{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="mb-4">Registrar Nuevo Documento</h1>
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('documento.nuevo_documento') }}" enctype="multipart/form-data" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            {{ form.tipo.label(class="form-label") }}
+                            <!-- Añadimos un id al select para que JavaScript lo encuentre -->
+                            {{ form.tipo(class="form-select", id="tipo") }}
+                            {% for error in form.tipo.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.numero_doc.label(class="form-label") }}
+                            {{ form.numero_doc(class="form-control") }}
+                             {% for error in form.numero_doc.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            {{ form.fecha_doc.label(class="form-label") }}
+                            {{ form.fecha_doc(class="form-control") }}
+                             {% for error in form.fecha_doc.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ form.remitente_destinatario.label(class="form-label") }}
+                        {{ form.remitente_destinatario(class="form-control") }}
+                        {% for error in form.remitente_destinatario.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.asunto.label(class="form-label") }}
+                        {{ form.asunto(class="form-control", rows=3) }}
+                        {% for error in form.asunto.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <!-- El div que contiene el campo de fecha límite -->
+                    <div class="mb-3" id="fecha-limite-container">
+                        {{ form.fecha_limite_respuesta.label(class="form-label") }}
+                        <!-- Añadimos un id al input para que JavaScript lo encuentre -->
+                        {{ form.fecha_limite_respuesta(class="form-control", id="fecha_limite_respuesta") }}
+                        {% for error in form.fecha_limite_respuesta.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.observaciones.label(class="form-label") }}
+                        {{ form.observaciones(class="form-control", rows=2) }}
+                        {% for error in form.observaciones.errors %}
+                            <div class="invalid-feedback d-block">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="archivo" class="form-label">Adjuntar Archivo (Opcional)</label>
+                        <input class="form-control" type="file" name="archivo" id="archivo">
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-end">
+                        <a href="{{ url_for('documento.dashboard') }}" class="btn btn-secondary me-2">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<!-- ===> NUEVO BLOQUE DE JAVASCRIPT AÑADIDO <=== -->
+{% block scripts %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tipoSelect = document.getElementById('tipo');
+            // Seleccionamos el div contenedor, no el input directamente
+            const fechaLimiteContainer = document.getElementById('fecha-limite-container');
+
+            function toggleFechaLimite() {
+                if (tipoSelect.value === 'Emitido') {
+                    fechaLimiteContainer.style.display = 'none';
+                } else {
+                    fechaLimiteContainer.style.display = 'block';
+                }
+            }
+            
+            toggleFechaLimite(); // Ejecutar al cargar la página
+            tipoSelect.addEventListener('change', toggleFechaLimite); // Ejecutar al cambiar la selección
+        });
+    </script>
+{% endblock %}
